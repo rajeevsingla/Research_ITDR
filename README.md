@@ -125,8 +125,33 @@ ________________________________________
 4. Risk-Based IAM Integration
 If the model detects a deviation:
 •	Trigger step-up authentication (e.g., MFA).
+
+
+
+How to Run the System
+1.Activate your virtual environment:
+bash
+.\venv\Scripts\activate
+2.Start the Flask server:
+bash
+python app.py
+3.Open index.html in your browser and begin training.
+4. Now you can also send POST requests to http://localhost:5000/analyze with behavioral data.
+________________________________________
+Example Request (via Postman or JavaScript)
+{
+  "mouse_speed": 0.58,
+  "click_interval": 0.27,
+  "key_dwell_time": 0.12,
+  "key_flight_time": 0.08
+}
+
+ 
+
+
 •	Alert the security team.
 •	Log the event for audit.
+<img width="940" height="383" alt="image" src="https://github.com/user-attachments/assets/e4c0e530-4b8e-4983-953e-98d5c9fc1370" />
 
 
 
