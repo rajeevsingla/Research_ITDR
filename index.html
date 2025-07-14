@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI-Powered ITDR Login</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      margin-bottom: 0;
+      font-size: 2.2em;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-weight: normal;
+      font-size: 1.2em;
+      color: #a0c4ff;
+    }
+
+    form {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 20px 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      width: 300px;
+    }
+
+    input {
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      font-size: 1em;
+    }
+
+    button {
+      padding: 10px;
+      background-color: #00b4d8;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0077b6;
+    }
+
+    #status {
+      margin-top: 15px;
+      font-size: 0.95em;
+      color: #ffd166;
+    }
+
+    footer {
+      position: absolute;
+      bottom: 10px;
+      text-align: center;
+      font-size: 0.9em;
+      color: #ccc;
+    }
+
+    footer span {
+      display: block;
+      margin-top: 5px;
+      font-weight: bold;
+      color: #90e0ef;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Secure Login</h1>
+  <h2>AI-Powered Identity Threat Detection</h2>
+
+  <form id="loginForm">
+    <input type="text" id="username" placeholder="Username" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button type="submit">Login</button>
+  </form>
+
+  <button onclick="resetTraining()">🔄 Retest</button>
+  <p id="status"></p>
+
+  <footer>
+    AI-Powered Identity Threat Detection and Response (ITDR)
+    <span>Author: Rajeev Singla</span>
+  </footer>
+
+  <script>
+    console.log("✅ Script loaded");
+
+    let keyDurations = [], mouseSpeeds = [], mouseAngles = [], mouseAccelerations = [];
+    let lastKeyTime, lastMouseTime, lastSpeed = 0, lastX, lastY;
+    let usedTab = false;
+    let submitMethod = null;
+
+    document.querySelectorAll("#username, #password").forEach(input => {
+      input.addEventListener("keydown", e => {
+        if (e.key === "Tab") usedTab = true;
+        if (e.key === "Enter") submitMethod = "keyboard";
+        const now = Date.now();
+        if (lastKeyTime) keyDurations.push(now - lastKeyTime);
+        lastKeyTime = now;
+      });
+    });
+
+    document.addEventListener("mousemove", e => {
+      const now = Date.now();
+      if (lastMouseTime) {
+        const dt = (now - lastMouseTime) / 1000;
+        const dx = e.clientX - lastX;
+        const dy = e.clientY - lastY;
+        const speed = Math.sqrt(dx * dx + dy * dy) / dt;
+        const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+        const acceleration = (speed - lastSpeed) / dt;
+
+        mouseSpeeds.push(speed);
+        mouseAngles.push(angle);
+        mouseAccelerations.push(acceleration);
+
+        lastSpeed = speed;
+      }
+      lastMouseTime = now;
+      lastX = e.clientX;
+      lastY = e.clientY;
+    });
+
+    document.querySelector("form button[type='submit']").addEventListener("click", () => {
+      submitMethod = "mouse";
+      console.log("🖱️ Submit method set to mouse");
+    });
+
+    document.getElementById("loginForm").addEventListener("submit", e => {
+      e.preventDefault();
+
+      if (!submitMethod) submitMethod = "mouse";
+      console.log("🚀 Login submitted with method:", submitMethod);
+
+      const attempts = JSON.parse(localStorage.getItem("loginAttempts") || "[]");
+
+      const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+      const variance = arr => {
+        const mean = avg(arr);
+        return arr.length ? arr.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / arr.length : 0;
+      };
+
+      const data = {
+        mouse_speed: avg(mouseSpeeds),
+        mouse_angle: avg(mouseAngles),
+        mouse_angle_var: variance(mouseAngles),
+        mouse_accel: avg(mouseAccelerations),
+        click_interval: 0.3,
+        key_dwell_time: avg(keyDurations),
+        key_flight_time: 0.1,
+        nav_method: usedTab ? 0 : 1,
+        submit_method: submitMethod
+      };
+
+      if (attempts.length < 10) {
+        attempts.push(data);
+        localStorage.setItem("loginAttempts", JSON.stringify(attempts));
+        document.getElementById("status").innerText = `Training login ${attempts.length}/10 recorded.`;
+      } else {
+        fetch("http://127.0.0.1:5000/evaluate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ current: data, history: attempts })
+        })
+        .then(res => res.json())
+        .then(result => {
+          alert(`Risk Score: ${result.risk_score}\nVerdict: ${result.match}`);
+        })
+        .catch(err => {
+          console.error("❌ Error contacting backend:", err);
+          alert("Server error. Please check if Flask is running.");
+        });
+      }
+
+      keyDurations = [];
+      mouseSpeeds = [];
+      mouseAngles = [];
+      mouseAccelerations = [];
+      usedTab = false;
+      submitMethod = null;
+    });
+
+    function resetTraining() {
+      localStorage.removeItem("loginAttempts");
+      document.getElementById("status").innerText = "Training reset. Start again.";
+      console.log("🔄 Training data cleared");
+    }
+  </script>
+</body>
+</html>
